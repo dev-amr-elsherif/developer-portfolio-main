@@ -4,62 +4,43 @@ export default async function handler(req, res) {
     const { messages } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiKey) return res.status(500).json({ error: 'Missing API Key' });
-
     try {
+        // 1. استخراج تعليمات النظام
         const systemMessage = messages.find(m => m.role === 'system');
         
-        // تنظيف الرسائل لضمان التبادل (User -> Model)
-        let lastRole = '';
-        const geminiContents = messages
+        // 2. تجهيز المحادثة بصيغة تقبلها كل نسخ Gemini
+        let geminiContents = messages
             .filter(m => m.role !== 'system')
-            .map(msg => {
-                const currentRole = msg.role === 'assistant' ? 'model' : 'user';
-                if (currentRole === lastRole) return null;
-                lastRole = currentRole;
-                return {
-                    role: currentRole,
-                    parts: [{ text: msg.content }]
-                };
-            })
-            .filter(Boolean);
+            .map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
 
-        const requestBody = {
-            contents: geminiContents
-        };
-
-        // إضافة تعليمات النظام - دي اللي كانت بتعمل Error في النسخة القديمة
-        if (systemMessage) {
-            requestBody.system_instruction = { // تأكد من استخدام v1beta مع هذا الهيكل
-                parts: [{ text: systemMessage.content }]
-            };
+        // 3. لو فيه تعليمات نظام، هنحطها في أول رسالة User عشان نضمن إن الموديل يلقطها
+        if (systemMessage && geminiContents.length > 0) {
+            geminiContents[0].parts[0].text = `Instructions: ${systemMessage.content}\n\nUser Message: ${geminiContents[0].parts[0].text}`;
         }
 
-        // الرابط الصحيح لنسخة v1beta مع الموديل
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // 4. الرابط المستقر (Stable URL)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({ contents: geminiContents })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            return res.status(response.status).json({ 
-                error: data.error?.message || 'Gemini API Error',
-                details: data.error
-            });
+            return res.status(response.status).json({ error: data.error?.message || 'API Error' });
         }
 
         const replyText = data.candidates[0].content.parts[0].text;
         
         return res.status(200).json({
-            choices: [{
-                message: { role: "assistant", content: replyText }
-            }]
+            choices: [{ message: { role: "assistant", content: replyText } }]
         });
 
     } catch (error) {
-        return res.status(500).json({ error: 'Server Error', details: error.message });
+        return res.status(500).json({ error: error.message });
     }
 }
