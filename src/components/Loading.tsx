@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import "./styles/Loading.css";
 import { useLoading } from "../context/LoadingProvider";
+import "./styles/Loading.css";
 
 import Marquee from "react-fast-marquee";
 
@@ -62,8 +62,8 @@ const Loading = ({ percent }: { percent: number }) => {
       <div className="loading-screen">
         <div className="loading-marquee">
           <Marquee>
-            <span>&nbsp; AI Engineer &nbsp;</span> <span>&nbsp; Full Stack Developer &nbsp;</span>
-            <span>&nbsp; AI Engineer &nbsp;</span> <span>&nbsp; Full Stack Developer &nbsp;</span>
+            <span>&nbsp; Mobile App Developer &nbsp;</span> <span>&nbsp; Backend Engineer &nbsp;</span>
+            <span>&nbsp; Mobile App Developer &nbsp;</span> <span>&nbsp; Backend Engineer &nbsp;</span>
           </Marquee>
         </div>
         <div
