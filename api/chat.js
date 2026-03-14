@@ -4,9 +4,9 @@ export default async function handler(req, res) {
     }
 
     const { messages } = req.body;
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!GEMINI_API_KEY) {
+    if (!apiKey) {
         return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
     }
 
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
         }
 
         // 3. إرسال الطلب لـ Gemini 1.5 Flash (سريع جداً وممتاز للشات)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
